@@ -81,7 +81,16 @@ angular.module('dndLists', [])
         event = event.originalEvent || event;
 
         // Serialize the data associated with this element. IE only supports the Text drag type
-        event.dataTransfer.setData("Text", angular.toJson(scope.$eval(attr.dndDraggable)));
+        data = scope.$eval(attr.dndDraggable);
+        serialize = scope.$eval(attr.dndSerialize);
+
+        if (typeof serialize !== 'undefined') {
+          data = serialize;
+        } else {
+          data = angular.toJson(data);
+        }
+
+        event.dataTransfer.setData("Text", data);
 
         // Only allow actions specified in dnd-effect-allowed attribute
         event.dataTransfer.effectAllowed = attr.dndEffectAllowed || "move";
@@ -304,10 +313,21 @@ angular.module('dndLists', [])
         // the "Text" drag type will be converted to text/plain, but IE does not do that.
         var data = event.dataTransfer.getData("Text") || event.dataTransfer.getData("text/plain");
         var transferredObject;
+
+        // Retrieve the JSON array and insert the transferred object into it.
+        var targetArray = scope.$eval(attr.dndList);
+
         try {
           transferredObject = JSON.parse(data);
+          // transferredObject = data;
         } catch(e) {
-          return stopDragover();
+          // return stopDragover();
+        }
+
+        serialize = attr.dndSerialize;
+
+        if (typeof serialize !== 'undefined') {
+          transferredObject = _.find(targetArray, function (obj) { return obj[serialize] == parseInt(transferredObject) });
         }
 
         // Invoke the callback, which can transform the transferredObject and even abort the drop.
@@ -318,11 +338,11 @@ angular.module('dndLists', [])
           }
         }
 
-        // Retrieve the JSON array and insert the transferred object into it.
-        var targetArray = scope.$eval(attr.dndList);
-        scope.$apply(function() {
-          targetArray.splice(getPlaceholderIndex(), 0, transferredObject);
-        });
+        targetArray.splice(getPlaceholderIndex(), 0, targetArray.splice(targetArray.indexOf(transferredObject), 1)[0] );
+
+        if (attr.dndAfterDrop) {
+          scope.$eval(attr.dndAfterDrop);
+        }
 
         // In Chrome on Windows the dropEffect will always be none...
         // We have to determine the actual effect manually from the allowed effects
