@@ -90,6 +90,8 @@ angular.module('dndLists', [])
           data = angular.toJson(data);
         }
 
+        console.log(data)
+
         event.dataTransfer.setData("Text", data);
 
         // Only allow actions specified in dnd-effect-allowed attribute
@@ -328,6 +330,8 @@ angular.module('dndLists', [])
 
         if (typeof serialize !== 'undefined') {
           transferredObject = _.find(targetArray, function (obj) { return obj[serialize] == parseInt(transferredObject) });
+        } else {
+          transferredObject = _.find(targetArray, function (obj) { return obj.id == parseInt(transferredObject) });
         }
 
         // Invoke the callback, which can transform the transferredObject and even abort the drop.
